@@ -20,13 +20,12 @@ namespace API_Cursos.Controller
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllEstudiantes() {             
+        public async Task<IActionResult> GetAllEstudiantesActivos() {             
 
-            var estudiantes = await _context.Estudiante.ToListAsync();
+            var estudiantes = await _context.Estudiante.Where(e => e.Estado == true) .ToListAsync();
             return Ok(estudiantes);
             
         }
-
         [HttpPost]
         public async Task<IActionResult> CreateEstudiante([FromBody] Estudiante estudiante)
         {
@@ -38,7 +37,7 @@ namespace API_Cursos.Controller
             await _context.Estudiante.AddAsync(estudiante);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAllEstudiantes), new { id = estudiante.IdEstudiante }, estudiante);
+            return CreatedAtAction(nameof(GetAllEstudiantesActivos), new { id = estudiante.IdEstudiante }, estudiante);
         }
 
 
@@ -80,6 +79,26 @@ namespace API_Cursos.Controller
             await _context.SaveChangesAsync();
 
             return Ok(estudianteExistente);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DisableEstudiante(int id) { 
+
+            var estudiante = await _context.Estudiante.FindAsync(id);
+
+            if (estudiante == null)
+            {
+                return NotFound("El estudiante no fue encontrado.");
+            }
+
+            // Cambiar el estado del estudiante a inactivo
+            estudiante.Estado = false;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(estudiante);
+    
+            
         }
 
         
