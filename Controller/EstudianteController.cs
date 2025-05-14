@@ -14,12 +14,16 @@ namespace API_Cursos.Controller
 
         private readonly AppDBContext _context;
 
+
+        //Constructor de la clase EstudianteController
         public EstudianteController(AppDBContext context)
         {
             _context = context;
         }
 
         [HttpGet]
+
+        //Metodo para obtener todos los estudiantes activos
         public async Task<IActionResult> GetAllEstudiantesActivos() {             
 
             var estudiantes = await _context.Estudiante.Where(e => e.Estado == true) .ToListAsync();
@@ -27,6 +31,7 @@ namespace API_Cursos.Controller
             
         }
         [HttpPost]
+        //Metodo para crear un estudiante
         public async Task<IActionResult> CreateEstudiante([FromBody] Estudiante estudiante)
         {
             if (estudiante == null)
@@ -42,6 +47,7 @@ namespace API_Cursos.Controller
 
 
         [HttpGet("{id}")]
+        //Metodo para buscar un estudiante por medio de su ID
         public async Task<IActionResult> SearchEstudianteById(int id) { 
             //Buscar al estudiante por medio de su ID 
             var estudianteBuscado = await _context.Estudiante.FindAsync(id);         
@@ -55,6 +61,7 @@ namespace API_Cursos.Controller
         }  
 
         [HttpPut("{id}")]
+        //Metodo para actualizar un estudiante
         public async Task<IActionResult>  UpdateEstudiante(int id, [FromBody] Estudiante estudianteActualizado) {
            
             if(estudianteActualizado == null  || id != estudianteActualizado.IdEstudiante) {
@@ -82,6 +89,7 @@ namespace API_Cursos.Controller
         }
 
         [HttpDelete("{id}")]
+        // Metodo para desabilitar a un estudiante
         public async Task<IActionResult> DisableEstudiante(int id) { 
 
             var estudiante = await _context.Estudiante.FindAsync(id);
