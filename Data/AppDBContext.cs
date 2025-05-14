@@ -1,4 +1,5 @@
 using System;
+using API_Cursos.DTOs;
 using API_Cursos.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,5 +12,9 @@ public class AppDBContext:DbContext
         
     }
 
-    public DbSet<Profesores> Profesores { get; set; }
+    public DbSet<Profesor> Profesor { get; set; }
+    public DbSet<Estudiante> Estudiante { get; set; }
+    public DbSet<Curso> Curso { get; set; }
+    public DbSet<Asignacion> Asignacion { get; set; }
+    public DbSet<ProfesorCurso> ProfesorCurso { get; set; }
 }

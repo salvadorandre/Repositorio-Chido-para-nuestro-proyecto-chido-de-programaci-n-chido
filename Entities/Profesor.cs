@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API_Cursos.Entities;
 
-public class Profesores
+public class Profesor
 {
     [Key]
     public int IdProfesor { get; set; }
@@ -17,6 +17,8 @@ public class Profesores
     public required int CapacidadEstudiantes { get; set; }
     [Required(ErrorMessage = "campo requerido")]
     public required bool Estado { get; set; }
+
+    public List<ProfesorCurso> ProfesorCurso { get; set; } = new List<ProfesorCurso>();
 
     //TODO: Pendiente implementar metodos de navegacion
 }
