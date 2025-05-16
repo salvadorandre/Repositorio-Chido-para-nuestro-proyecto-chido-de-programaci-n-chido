@@ -7,3 +7,5 @@ artifacts/
 .vs/
 *.csproj.user
 publish/
+*.json
+Properties/
