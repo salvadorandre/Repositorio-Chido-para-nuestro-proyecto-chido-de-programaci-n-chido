@@ -51,6 +51,7 @@ namespace API_Cursos.Controller
                         IdProfesor = asignacion.ProfesorCurso!.Profesor!.IdProfesor,
                         Nombre = asignacion.ProfesorCurso!.Profesor!.Nombre,
                         CapacidadEstudiantes = asignacion.ProfesorCurso!.Profesor!.CapacidadEstudiantes,
+                        Estado = asignacion.ProfesorCurso.Profesor.Estado
                     },
                     Estado = asignacion.Estado
 
@@ -99,6 +100,7 @@ namespace API_Cursos.Controller
                            IdProfesor = asignacion.ProfesorCurso!.Profesor!.IdProfesor,
                            Nombre = asignacion.ProfesorCurso!.Profesor!.Nombre,
                            CapacidadEstudiantes = asignacion.ProfesorCurso!.Profesor!.CapacidadEstudiantes,
+                             Estado = asignacion.ProfesorCurso.Profesor.Estado
                        },
                        Estado = asignacion.Estado
 
