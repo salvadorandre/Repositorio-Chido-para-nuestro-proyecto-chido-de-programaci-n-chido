@@ -1,6 +1,7 @@
 using API_Cursos.Data;
 using API_Cursos.DTOs;
 using API_Cursos.Entities;
+using API_Cursos.Migrations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,7 @@ namespace API_Cursos.Controller
             this._context = context;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AsigancionDetalleDTO>>> GetAsignacion([FromQuery] bool activo =true)
+        public async Task<ActionResult<IEnumerable<AsigancionDetalleDTO>>> GetAsignacion([FromQuery] bool activo = true)
         {
             return await _context
             .Asignacion
@@ -27,7 +28,7 @@ namespace API_Cursos.Controller
                 .ThenInclude(pc => pc!.Curso)
             .Include(asignacionProfesor => asignacionProfesor.ProfesorCurso)
                 .ThenInclude(pc => pc!.Profesor)
-            .Where(asignacion=> asignacion.Estado==activo)
+            .Where(asignacion => asignacion.Estado == activo)
             .Select(
                 asignacion =>
                 new AsigancionDetalleDTO
@@ -100,7 +101,7 @@ namespace API_Cursos.Controller
                            IdProfesor = asignacion.ProfesorCurso!.Profesor!.IdProfesor,
                            Nombre = asignacion.ProfesorCurso!.Profesor!.Nombre,
                            CapacidadEstudiantes = asignacion.ProfesorCurso!.Profesor!.CapacidadEstudiantes,
-                             Estado = asignacion.ProfesorCurso.Profesor.Estado
+                           Estado = asignacion.ProfesorCurso.Profesor.Estado
                        },
                        Estado = asignacion.Estado
 
@@ -111,22 +112,76 @@ namespace API_Cursos.Controller
         [HttpPost]
         public async Task<ActionResult> PostAsignacion([FromBody] Asignacion asignacion)
         {
-            if (asignacion == null)
+            try
             {
-                ModelState
-                    .AddModelError("asignacion", $"Todos los datos son requeridos");
+                if (asignacion == null)
+                {
+                    ModelState
+                        .AddModelError("asignacion", $"Todos los datos son requeridos");
 
+                    return ValidationProblem();
+                }
+                var asignacionExisistente = await _context.Asignacion
+                .Where(a => a.Estado == true)
+                .AnyAsync(a =>
+                a.ProfesorCursoId == asignacion.ProfesorCursoId
+                && a.EstudianteId == asignacion.EstudianteId);
+
+                if (asignacionExisistente )
+                {
+                    ModelState
+                        .AddModelError("asignacion", $"Ya existe una asignacion existente");
+
+                    return ValidationProblem();
+                }
+
+                var profesorAsignado = await _context
+                .ProfesorCurso
+                .Include(profesor => profesor.Profesor)
+                .Include(asign => asign.Asignacion)
+                .FirstOrDefaultAsync(prof => prof.IdProfesorCurso == asignacion.ProfesorCursoId);
+                var estudiante = await _context
+                .Estudiante
+                .FirstOrDefaultAsync(es => es.IdEstudiante == asignacion.EstudianteId);
+
+                if (profesorAsignado == null || estudiante == null)
+                {
+                    ModelState.AddModelError(nameof(asignacion), "ProfesorCurso o Estudiante no encontrados");
+                    return ValidationProblem();
+                }
+
+                if (!profesorAsignado.Estado || !estudiante.Estado)
+                {
+                    ModelState.AddModelError(nameof(asignacion), "El ProfesorCurso y el Estudiante deben estar activos");
+                    return ValidationProblem();
+                }
+
+                var totalAsignaciones = profesorAsignado.Asignacion.Count(a => a.Estado);
+                var capacidadProfesor = profesorAsignado?.Profesor?.CapacidadEstudiantes;
+
+                if (capacidadProfesor <= totalAsignaciones)
+                {
+                    ModelState
+                        .AddModelError("asignacion", $"No fue posible asignar mas estudiantes a este profesor");
+
+                    return ValidationProblem();
+                }
+
+                asignacion.Fecha = DateTime.UtcNow;
+                _context.Add(asignacion);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "Insertado correctamente"
+                });
+            }
+            catch (System.Exception ex)
+            {
+
+                ModelState.AddModelError(nameof(asignacion), "Ocurrió un error inesperado al guardar la asignación");
                 return ValidationProblem();
             }
-
-            asignacion.Fecha = DateTime.UtcNow;
-            _context.Add(asignacion);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Insertado correctamente"
-            });
         }
         [HttpPut("{id:int}")]
         public async Task<ActionResult> PutAsignacion([FromRoute] int id, [FromBody] Asignacion asignacion)
@@ -153,7 +208,7 @@ namespace API_Cursos.Controller
 
         }
 
-        [HttpPut("disable/{id:int}")]
+        [HttpDelete("{id:int}")]
         public async Task<ActionResult> DisableAsignacion([FromRoute] int id = 0)
         {
             if (id == 0)

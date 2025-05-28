@@ -18,13 +18,13 @@ namespace API_Cursos.Controller
             this._context = context;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProfesorCursoDTO>>> GetAsignacionProfesores([FromQuery] bool activo =true)
+        public async Task<ActionResult<IEnumerable<ProfesorCursoDTO>>> GetAsignacionProfesores([FromQuery] bool activo = true)
         {
             return Ok(await _context
             .ProfesorCurso
             .Include(curso => curso.Curso)
             .Include(profesor => profesor.Profesor)
-            .Where(asignacion=> asignacion.Estado==activo)
+            .Where(asignacion => asignacion.Estado == activo)
             .Select(profesorCurso =>
                 new ProfesorCursoDTO
                 {
@@ -43,7 +43,7 @@ namespace API_Cursos.Controller
                         Estado = profesorCurso.Profesor.Estado,
 
                     },
-                    Estado=profesorCurso.Estado
+                    Estado = profesorCurso.Estado
                 })
                 .ToListAsync());
         }
@@ -80,33 +80,76 @@ namespace API_Cursos.Controller
 
                         }
                         ,
-                        Estado=asignacion.Estado
+                        Estado = asignacion.Estado
                     });
         }
 
         [HttpPost]
         public async Task<ActionResult> PostAsignacionProfesor([FromBody] ProfesorCurso profesorCurso)
         {
-            if (profesorCurso == null)
+            try
             {
+                if (profesorCurso == null)
+                {
+                    ModelState
+                        .AddModelError("asignacion", $"Todos los datos son requeridos");
+
+                    return ValidationProblem();
+                }
+                var asignacionExisistente = await _context.ProfesorCurso
+                            .Where(a => a.Estado == true)
+                            .AnyAsync(a =>
+                            a.ProfesorId == profesorCurso.ProfesorId
+                            && a.CursoId == profesorCurso.CursoId);
+
+                if (asignacionExisistente )
+                {
+                    ModelState
+                        .AddModelError("asignacion", $"Ya existe una asignacion existente");
+
+                    return ValidationProblem();
+                }
+                var profesor = await _context.Profesor.FirstOrDefaultAsync(profesor => profesor.IdProfesor == profesorCurso.ProfesorId);
+                var curso = await _context.Curso.FirstOrDefaultAsync(curso => curso.IdCurso == profesorCurso.CursoId);
+
+
+                if (profesor == null || curso == null)
+                {
+                    ModelState
+                           .AddModelError(nameof(profesorCurso), $"Curso o Profesor deben estar acitivos");
+
+                    return ValidationProblem();
+                }
+                if (profesor.Estado == false || curso.Estado == false)
+                {
+                    ModelState
+                       .AddModelError(nameof(profesorCurso), $"Curso o Profesor deben estar acitivos");
+
+                    return ValidationProblem();
+                }
+
+
+                _context.Add(profesorCurso);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "Insertado correctamente"
+                });
+            }
+            catch (System.Exception)
+            {
+
                 ModelState
-                    .AddModelError("asignacion", $"Todos los datos son requeridos");
+                        .AddModelError(nameof(profesorCurso), $"Ocurrio un problema al asignar");
 
                 return ValidationProblem();
             }
-
-            _context.Add(profesorCurso);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Insertado correctamente"
-            });
         }
         [HttpPut("{id:int}")]
         public async Task<ActionResult> PutAsignacionProfesor([FromRoute] int id, [FromBody] ProfesorCurso profesorCurso)
         {
-          if (profesorCurso == null || profesorCurso.IdProfesorCurso != id)
+            if (profesorCurso == null || profesorCurso.IdProfesorCurso != id)
             {
                 return BadRequest("Datos Inconcistentes o nulos");
             }
@@ -125,8 +168,8 @@ namespace API_Cursos.Controller
             });
 
         }
-        
-        [HttpPut("disable/{id:int}")]
+
+        [HttpDelete("{id:int}")]
         public async Task<ActionResult> DisableAsignacionProfesor([FromRoute] int id = 0)
         {
             if (id == 0)

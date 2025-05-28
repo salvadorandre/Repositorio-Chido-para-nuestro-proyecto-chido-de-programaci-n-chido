@@ -168,7 +168,7 @@ public class ProfesorController : ControllerBase
         });
     }
 
-    [HttpPut("disable/{id:int}")]
+    [HttpDelete("{id:int}")]
     public async Task<ActionResult> DisableProfesor([FromRoute] int id = 0)
     {
         if (id == 0)
