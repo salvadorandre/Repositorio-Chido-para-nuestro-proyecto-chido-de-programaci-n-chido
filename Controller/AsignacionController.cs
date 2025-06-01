@@ -127,7 +127,7 @@ namespace API_Cursos.Controller
                 a.ProfesorCursoId == asignacion.ProfesorCursoId
                 && a.EstudianteId == asignacion.EstudianteId);
 
-                if (asignacionExisistente )
+                if (asignacionExisistente)
                 {
                     ModelState
                         .AddModelError("asignacion", $"Ya existe una asignacion existente");
@@ -153,6 +153,11 @@ namespace API_Cursos.Controller
                 if (!profesorAsignado.Estado || !estudiante.Estado)
                 {
                     ModelState.AddModelError(nameof(asignacion), "El ProfesorCurso y el Estudiante deben estar activos");
+                    return ValidationProblem();
+                }
+                if (estudiante.Promedio<61)
+                {
+                    ModelState.AddModelError(nameof(asignacion), "El promedio del estudiante debe ser mayor o igual a 61");
                     return ValidationProblem();
                 }
 
